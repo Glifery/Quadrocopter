@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quadro2</title>
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.2/raphael-min.js"></script>
+    <script src="js/vector.js"></script>
+    <script src="js/solid.js"></script>
+    <script src="js/position.js"></script>
+    <script src="js/force.js"></script>
+    <script>
+        $(function() {
+            window.friquency = 25;
+
+            var paper = Raphael(0, 0, 1900, 900);
+//            var frame = paper.rect(1, 1, 1899, 899);
+            var circle = paper.rect(0, 0, 40, 40);
+            var imgMainVector = paper.path().attr({stroke: '#0000FF'});
+            var imgAccelVector = paper.path().attr({stroke: '#FF0000'});
+
+            var solid = new Solid(600, 400, circle);
+            solid.imgMainVector = imgMainVector;
+            solid.imgAccelVector = imgAccelVector;
+
+            var leftEngine = new Position(-30, 0, new Vector(0, -0.5));
+            var rightEngine = new Position(30, 0, new Vector(0, -0.5));
+            var gravity = new Position(0, 10, new Vector(0, 1));
+            gravity.absoluteDir = true;
+
+            solid.addPosition(leftEngine);
+            solid.addPosition(rightEngine);
+            solid.addPosition(gravity);
+
+//            setTimeout(function() {
+            setInterval(function() {
+                solid.onFrameFn(solid);
+            }, friquency);
+
+            (function keywordsHandler() {
+                var keyMap = {
+                    81: {
+                        'engine': leftEngine,
+                        'mod': 1
+                    },
+                    65: {
+                        'engine': leftEngine,
+                        'mod': -1
+                    },
+                    87: {
+                        'engine': rightEngine,
+                        'mod': 1
+                    },
+                    83: {
+                        'engine': rightEngine,
+                        'mod': -1
+                    }
+                }
+                var koef = 0.3;
+
+                $(document).keydown(function(e){
+                    if (keyMap.hasOwnProperty(e.keyCode)) {
+                        var engine = keyMap[e.keyCode].engine;
+
+                        engine.force.modificator = engine.force.modificator + (koef * keyMap[e.keyCode].mod);
+
+                        console.log('change to', engine.force.modificator);
+                    }
+                });
+                $(document).keyup(function(e){
+                    if (keyMap.hasOwnProperty(e.keyCode)) {
+                        var engine = keyMap[e.keyCode].engine;
+
+                        engine.force.modificator = 1;
+
+                        console.log('change to', engine.force.modificator);
+                    }
+                });
+            })();
+        });
+    </script>
+</head>
+<body>
+
+</body>
+</html>

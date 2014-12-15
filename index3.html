@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Quadro</title>
+        <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.2/raphael-min.js"></script>
+        <script src="js/vector.js"></script>
+        <script src="js/solid.js"></script>
+        <script src="js/point.js"></script>
+        <script>
+            var v = new Vector(0, 10);
+            v.momentAtPoint(10, 0);
+
+            var solid = new Solid();
+            solid.cx = 100;
+            solid.cy = 400;
+//            for (var i = 0; i < 5; i++) {
+//                var point = new Point();
+//                point.cx = Math.random() * 40 - 20;
+//                point.cy = Math.random() * 40 - 20;
+//
+//                point.force.x(Math.random() * 40 - 20);
+//                point.force.y(Math.random() * 40 - 20);
+//
+//                point.solid = solid;
+//
+//            }
+            var pointLeft = new Point();
+            pointLeft.cx = -40;
+            pointLeft.cy = 0;
+            pointLeft.force.x(0);
+            pointLeft.force.y(-10);
+            pointLeft.solid = solid;
+            solid.points.push(pointLeft);
+
+            var pointRight = new Point();
+            pointRight.cx = 40;
+            pointRight.cy = 0;
+            pointRight.force.x(0);
+            pointRight.force.y(-10);
+            pointRight.solid = solid;
+            solid.points.push(pointRight);
+
+            //gravity
+            var gravity = new Vector();
+            gravity.dir(270);
+            gravity.dis(3);
+
+            $(function() {
+                //is keys pressed
+                var keys = {
+                    81: false,
+                    87: false
+                }
+
+                //quadrocopter  engines asselerate
+                var accelerate = {
+                    81: 0,
+                    87: 0
+                }
+
+                //main drawing
+                var paper = Raphael(0, 0, 1900, 900);
+                var frame = paper.rect(1, 1, 1899, 899);
+                var circle = paper.rect(solid.cx - 20, solid.cy - 20, 40, 40);
+
+                //gather handling elements (solid points, its views and arrows)
+                var dots = [];
+                for (var index in solid.points) {
+                    dots.push({
+                        point: solid.points[index],
+                        dot: paper.circle(
+                                solid.cx + solid.points[index].getRealX(),
+                                solid.cy + solid.points[index].getRealY(),
+                                1
+                            )
+                            .attr({fill: 'FF0000'}),
+                        arrow: paper.path(
+                                'M' + (solid.cx + solid.points[index].getRealX()) + ',' + (solid.cy + solid.points[index].getRealY()) +
+                                'l' + solid.points[index].getRealForce().x() + ',' + solid.points[index].getRealForce().y()
+                        )
+                    });
+                }
+
+                //every frame function
+                solid.moment = 0;
+                setInterval(function() {
+                    //change engines asselerate if buttons pressed
+                    for (var index in accelerate) {
+                        if (keys[index] && (accelerate[index] < 5)) {
+                            accelerate[index] +=0.25;
+                        }
+
+                        if (!keys[index] && (accelerate[index] > 0)) {
+                            accelerate[index] -=0.25;
+                        }
+                    }
+
+                    //add gravity
+//                    solid.vector.set(0, 0);
+                    solid.vector.add(gravity);
+
+                    //calculate moment of forces
+                    for (var index in dots) {
+                        var realVector = dots[index].point.getRealForce();
+
+                        if (index == 0) {
+                            realVector.dis(accelerate[81]);
+                        } else {
+                            realVector.dis(accelerate[87]);
+                        }
+
+                        solid.moment += realVector.momentAtPoint(-dots[index].point.getRealX(), -dots[index].point.getRealY())
+                        solid.vector.add(realVector);
+                    }
+
+                    //move solid
+                    solid.cx += solid.vector.x();
+                    solid.cy += solid.vector.y();
+
+                    //redraw solid
+                    circle.attr({
+                        x: solid.cx - 20,
+                        y: solid.cy - 20
+                    });
+
+                    //turn and redraw solid
+                    solid.dir += solid.moment/10;
+                    circle.transform('r' + -solid.dir);
+
+                    //change solid points position and its visualisation
+                    for (var index in dots) {
+                        dots[index].dot.attr({
+                            cx: solid.cx + dots[index].point.getRealX(),
+                            cy: solid.cy + dots[index].point.getRealY()
+                        });
+
+                        dots[index].arrow.attr({
+                            path: 'M' + (solid.cx + dots[index].point.getRealX()) + ',' + (solid.cy + dots[index].point.getRealY()) +
+                                    'l' + dots[index].point.getRealForce().x() + ',' + dots[index].point.getRealForce().y()
+                        })
+
+                    }
+
+
+                }, 50);
+
+                //keypress events
+                $(document).keydown(function(e){
+                    if (keys.hasOwnProperty(e.keyCode)) {
+                        keys[e.keyCode] = true;
+                    }
+                });
+                $(document).keyup(function(e){
+                    if (keys.hasOwnProperty(e.keyCode)) {
+                        keys[e.keyCode] = false;
+                    }
+                });
+            });
+        </script>
+    </head>
+    <body>
+
+    </body>
+</html>
